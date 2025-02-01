@@ -1,21 +1,28 @@
 import joblib
 import pandas as pd
 import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 class TurnoverPredictor:
     def __init__(self):
-        # Load the model and scaler
-        self.model = joblib.load('random_forest_turnover_top10.joblib')
-        self.scaler = joblib.load('scaler.joblib')
-        
-        # Define the top 10 features
-        self.features = ['satisfaction_level', 'number_project', 
-                        'time_spend_company', 'average_montly_hours',
-                        'last_evaluation', 'work_accident', 'salary_low',
-                        'salary_high', 'department_sales', 'department_technical']
-        
-        # Define which features need scaling
-        self.numerical_features = ['number_project', 'average_montly_hours', 'time_spend_company']
+        try:
+            # Load the model and scaler
+            self.model = joblib.load('random_forest_turnover_top10.joblib')
+            self.scaler = joblib.load('scaler.joblib')
+            
+            # Define the top 10 features
+            self.features = ['satisfaction_level', 'number_project', 
+                            'time_spend_company', 'average_montly_hours',
+                            'last_evaluation', 'work_accident', 'salary_low',
+                            'salary_high', 'department_sales', 'department_technical']
+            
+            # Define which features need scaling
+            self.numerical_features = ['number_project', 'average_montly_hours', 'time_spend_company']
+            
+        except Exception as e:
+            print(f"Error initializing model: {str(e)}")
+            raise
         
     def predict_turnover(self, data):
         """
@@ -44,10 +51,15 @@ class TurnoverPredictor:
                     data[feature] = scaled_numerical[:, idx]
             
             # Make predictions
-            probability = self.model.predict_proba(data)[:, 1]
-            prediction = self.model.predict(data)
-            
-            return probability[0], prediction[0]
+            # Use a more compatible prediction approach
+            try:
+                proba = self.model.predict_proba(data)
+                pred = (proba[:, 1] > 0.5).astype(int)
+                return proba[0, 1], pred[0]
+            except AttributeError:
+                # Fallback for older scikit-learn versions
+                pred = self.model.predict(data)
+                return float(pred[0]), pred[0]
             
         except Exception as e:
             print(f"Error in prediction: {str(e)}")
@@ -58,8 +70,12 @@ class TurnoverPredictor:
         """
         Get feature importance from the model
         """
-        return pd.DataFrame({
-            'feature': self.features,
-            'importance': self.model.feature_importances_
-        }).sort_values('importance', ascending=False)
+        try:
+            return pd.DataFrame({
+                'feature': self.features,
+                'importance': self.model.feature_importances_
+            }).sort_values('importance', ascending=False)
+        except AttributeError:
+            print("Feature importance not available for this model type")
+            return None
     
