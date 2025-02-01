@@ -41,39 +41,32 @@ def main():
         
         with col1:
             satisfaction_level = st.slider('Satisfaction Level', 0.0, 1.0, 0.5)
-            last_evaluation = st.slider('Last Evaluation Score', 0.0, 1.0, 0.5)
             number_project = st.number_input('Number of Projects', 2, 7, 4)
             average_montly_hours = st.number_input('Average Monthly Hours', 96, 310, 200)
             time_spend_company = st.number_input('Years at Company', 2, 10, 3)
+            last_evaluation = st.slider('Last Evaluation Score', 0.0, 1.0, 0.5)
             
         with col2:
             work_accident = st.checkbox('Had Work Accident')
             salary = st.selectbox('Salary Level', ['low', 'medium', 'high'])
-            department = st.selectbox('Department', 
-                                    ['sales', 'technical', 'support', 'IT', 'product_mng',
-                                     'marketing', 'RandD', 'accounting', 'hr', 'management'])
+            department = st.selectbox('Department', ['sales', 'technical', 'other'])
         
         submitted = st.form_submit_button("Predict")
         
         if submitted:
-            # Prepare the data
+            # Prepare the data with only the top 10 features
             data = {
                 'satisfaction_level': satisfaction_level,
-                'last_evaluation': last_evaluation,
                 'number_project': number_project,
-                'average_montly_hours': average_montly_hours,
                 'time_spend_company': time_spend_company,
-                'work_accident': int(work_accident)
+                'average_montly_hours': average_montly_hours,
+                'last_evaluation': last_evaluation,
+                'work_accident': int(work_accident),
+                'salary_low': 1 if salary == 'low' else 0,
+                'salary_high': 1 if salary == 'high' else 0,
+                'department_sales': 1 if department == 'sales' else 0,
+                'department_technical': 1 if department == 'technical' else 0
             }
-            
-            # Add salary columns
-            for s in ['low', 'medium', 'high']:
-                data[f'salary_{s}'] = 1 if salary == s else 0
-                
-            # Add department columns
-            for d in ['sales', 'technical', 'support', 'IT', 'product_mng',
-                     'marketing', 'RandD', 'accounting', 'hr', 'management']:
-                data[f'department_{d}'] = 1 if department == d else 0
             
             # Create DataFrame
             input_data = pd.DataFrame([data])
@@ -96,25 +89,23 @@ def main():
             # Show feature importance
             st.header('Feature Importance')
             feature_importance = predictor.get_feature_importance()
-            
-            # Create bar chart for feature importance
-            fig = go.Figure(go.Bar(
-                x=feature_importance['importance'],
-                y=feature_importance['feature'],
-                orientation='h'
-            ))
-            fig.update_layout(
-                title='Feature Importance',
-                xaxis_title='Importance',
-                yaxis_title='Feature',
-                height=400
-            )
-            st.plotly_chart(fig)
+            if feature_importance is not None:
+                fig = go.Figure(go.Bar(
+                    x=feature_importance['importance'],
+                    y=feature_importance['feature'],
+                    orientation='h'
+                ))
+                fig.update_layout(
+                    title='Feature Importance',
+                    xaxis_title='Importance',
+                    yaxis_title='Feature',
+                    height=400
+                )
+                st.plotly_chart(fig)
             
             # Show input summary
             st.header('Input Summary')
-            summary_data = pd.DataFrame([data]).iloc[:, :6]  # Show only main features
-            st.dataframe(summary_data)
+            st.dataframe(input_data)
 
 if __name__ == '__main__':
     main()

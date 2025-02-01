@@ -1,6 +1,6 @@
-streamlit
-pandas
-numpy
-plotly
-joblib
-scikit-learn
+streamlit==YOUR_LOCAL_VERSION
+pandas==YOUR_LOCAL_VERSION
+numpy==YOUR_LOCAL_VERSION
+plotly==YOUR_LOCAL_VERSION
+joblib==YOUR_LOCAL_VERSION
+scikit-learn==YOUR_LOCAL_VERSION
