@@ -1,10 +1,11 @@
 import joblib
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier  # or whatever model type you're using
 
 class TurnoverPredictor:
     def __init__(self):
-        # Load the model and scaler
+        # Use relative paths
         self.model = joblib.load('random_forest_turnover_top10.joblib')
         self.scaler = joblib.load('scaler.joblib')
         
@@ -15,23 +16,21 @@ class TurnoverPredictor:
                         'salary_high', 'department_sales', 'department_technical']
         
     def predict_turnover(self, data):
-        """
-        Make turnover predictions using only top 10 features
-        """
-        # Ensure we only use top 10 features
-        data = data[self.features]
-        
-        # Scale numerical features
-        numerical_features = ['number_project', 'average_montly_hours', 'time_spend_company']
-        scale_features = [f for f in numerical_features if f in self.features]
-        if scale_features:
-            data[scale_features] = self.scaler.transform(data[scale_features])
-        
-        # Make predictions
-        probability = self.model.predict_proba(data)[:, 1]
-        prediction = self.model.predict(data)
-        
-        return probability[0], prediction[0]
+        try:
+            # Convert data to numpy array if it's not already
+            data = np.array(data).reshape(1, -1)
+            
+            # Scale the data
+            scaled_data = self.scaler.transform(data)
+            
+            # Make prediction
+            probability = self.model.predict_proba(scaled_data)[0, 1]
+            prediction = 1 if probability > 0.5 else 0
+            
+            return probability, prediction
+        except Exception as e:
+            print(f"Error in prediction: {str(e)}")
+            raise
 
     def get_feature_importance(self):
         """
